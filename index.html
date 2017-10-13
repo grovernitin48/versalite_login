@@ -1,0 +1,223 @@
+<html>
+<head>
+<link rel="stylesheet" href="/node_modules/bootstrap/dist/css/bootstrap.min.css">
+<script type="text/javascript" src="/node_modules/jquery/dist/jquery.min.js"></script>
+
+<script>
+	function main_model() {
+
+
+    var self = this;    
+
+    self.responseData = ko.observable();
+    self.userName = ko.observable(); 
+    self.userRegistrationEmail = ko.observable();
+    self.userRegistrationPassword = ko.observable();
+    self.userRegistrationConfirmPassword = ko.observable();
+    self.userLoginEmail = ko.observable();
+    self.userLoginPassword = ko.observable();
+    self.accessToken = ko.observable();
+    self.refreshToken = ko.observable();
+    self.Persons = ko.observableArray([]);
+    
+
+    self.registerUser = function () {
+        self.responseData('');
+        var userRegistrationInfo = {
+            UserName: self.userRegistrationEmail(),
+            Password: self.userRegistrationPassword()
+        };
+ 
+        if (self.userRegistrationConfirmPassword() === self.userRegistrationConfirmPassword()) {
+            alert('Passsword Match');
+            $.ajax({
+                type: 'POST',
+                url: 'http://localhost:5050/createuser',
+                data: userRegistrationInfo,
+                contenttype: 'application/json; charset=utf-8',
+                datatype: "json"
+            }).done(function (data) {
+                self.responseData("Successfully " + data);
+                self.userRegistrationEmail("");
+                self.userRegistrationPassword("");
+                self.userRegistrationConfirmPassword("");
+
+
+            }).error(function (err) {
+                self.responseData("Error " + err.status);
+            });
+ 
+        } else {
+            alert('Password incorrect! Please check it again');
+        }
+ 
+ 
+    };
+
+
+    self.clear = function () {
+        self.userRegistrationEmail("");
+        self.userRegistrationPassword("");
+        self.userRegistrationConfirmPassword("");
+    };
+
+
+
+    self.login = function () {
+ 
+    
+        var userLogin = {
+            UserName: self.userLoginEmail(),
+            Password: self.userLoginPassword()
+        };
+        var data = 'UserName=' + userLogin.UserName + '&Password=' + userLogin.Password;
+        alert(data);
+        $.ajax({
+            type: 'POST',
+            url: 'http://localhost:5050/authuser',
+            contenttype: 'application/x-www-form-urlencoded',
+            data: data
+        }).done(function (resp) {
+            self.userName(resp.userName);
+            sessionStorage.setItem('UserName', resp.UserName);
+            sessionStorage.setItem('accessToken', resp.accessToken);
+        }).error(function (err) {
+            self.responseData("Error " + err.status);
+        });
+    };
+
+    self.getData = function () {
+        var accessToken = sessionStorage.getItem('accessToken');
+        console.log(accessToken);
+        var authHeaders = {};
+        if (accessToken) {
+            authHeaders.Authorization = 'Bearer ' + accessToken;
+        }
+        $.ajax({
+            url: 'http://localhost:5050/persons',
+            type: 'GET',
+            headers: authHeaders
+        }).done(function (resp) {
+            alert('data ' + JSON.stringify(resp));
+            self.Persons(resp);
+        }).error(function (error) {
+            self.responseData('Error Occured ' + error.status);
+        });
+    };
+ 
+  
+};
+ 
+var to_secure = new main_model();
+ko.applyBindings(to_secure);
+</script>
+
+</head>
+<body>
+<div class="container">
+  <div class="row">
+    <div class="col-sm-4">
+<table class="table table-bordered table-striped table-hover table-condensed">
+<tr>
+<td>Email id:</td>
+<td>
+<input type="text" id="unameregister" class="form-control" data-bind="value:userRegistrationEmail">
+</td>
+</tr>
+<tr>
+<td>Password:</td>
+<td>
+<input type="password" id="pwdregister" class="form-control" data-bind="value:userRegistrationPassword">
+</td>
+</tr>
+<tr>
+<td>Password Again : </td>
+<td>
+<input type="password" id="confirmpwdregister" class="form-control" data-bind="value:userRegistrationConfirmPassword" >
+</td>
+</tr>
+<tr>
+<td>
+<input type="button" id="btnregister" value="Register" class="btn btn-primary" data-bind="click:registerUser"/>
+</td>
+<td>
+<input type="button" id="btncancelregister" value="Cancel" class="btn btn-danger" data-bind="click:clear"/>
+</td>
+</tr>
+</table>
+</div>
+<div class="col-sm-4">
+<table class="table table-bordered table-striped table-hover table-condensed">
+<tr>
+<td>
+<table class="table table-bordered table-striped">
+<tr>
+<td>
+Email id:
+</td>
+<td>
+<input type="text" id="txtuname" class="form-control" data-bind="value:userLoginEmail"/>
+</td>
+</tr>
+<tr>
+<td>
+Password:
+</td>
+<td>
+<input type="password" id="txtpwd" class="form-control" data-bind="value:userLoginPassword"/>
+</td>
+</tr>
+<tr>
+<td>
+<input type="button" id="btnlogin" value="Login" class="btn btn-primary" data-bind="click:login"/>
+</td>
+<td>
+<input type="button" id="btncancel" value="Cancel" class="btn btn-danger"/>
+</td>
+</tr>                    
+</table>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</td>
+</tr>
+<tr>
+<td>
+<input type="button" value="Click to see the loaded data"  data-bind="click:getData"  class="btn btn-success">
+</td>
+</tr>
+</table>
+<hr/>
+ <br/>
+<div> </div>
+ <hr/>
+ <table class="table table-bordered table-striped table-hover table-condensed">
+<thead>
+  <tr>
+<th>Id</th>
+<th>Name</th>
+<th>Email</th>
+<th>Age</th>
+</tr>
+</thead>
+<tbody data-bind="foreach:Persons">
+  <tr>
+ <td>
+<span data-bind="text:Id"></span>
+ </td>
+<td>
+   <span data-bind="text:Name"></span>
+</td>
+<td>
+    <span data-bind="text:Email"></span>
+</td>
+ <td>
+<span data-bind="text:Age"></span>
+</td>
+</tr>
+</tbody>
+</table>
+</body>    
+</html>
